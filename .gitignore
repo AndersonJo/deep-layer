@@ -1,0 +1,6 @@
+# project
+.idea
+
+# Python
+*.pyc
+*.py~
