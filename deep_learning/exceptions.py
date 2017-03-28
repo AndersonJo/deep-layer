@@ -1,0 +1,2 @@
+class LayerNotFound(Exception):
+    pass
