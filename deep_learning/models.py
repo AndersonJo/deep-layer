@@ -51,7 +51,6 @@ class BaseModel(object):
             output: np.array = outputs[i]
             prev_output: np.array = outputs[i - 1]
             layer: Layer = self.layers[i - 1]
-            w, b = layer.get_weights()
 
             # prev_layer: Layer = self.layers[i - 2]
             if i == N:
@@ -63,19 +62,10 @@ class BaseModel(object):
                 d1 = w2.dot(delta)
 
             d2 = layer.dactivation(output).T
-            # d3 = d2.T.dot(prev_output)
             delta = d1 * d2
-
-            # delta = np.sum(delta, axis=0, keepdims=True)
-            # output = np.sum(output, axis=0, keepdims=True)
 
             delta_w = delta.dot(prev_output).T
             delta_b = delta.reshape(-1)
-
-            # print(w.shape, b.shape, delta.shape)
-            # w += - eta * delta.T.dot(output)
-            # b += - eta * delta
-            # print(b.shape, delta.shape, prev_layer.b.shape, layer, output.shape)
             deltas.append((delta_w, delta_b))
 
         layers = self.layers[::-1]

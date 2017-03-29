@@ -43,6 +43,6 @@ model.add(InputLayer(9, 64, activation='sigmoid', batch_input_shape=(None, 9), n
 model.add(Layer(64, 32, activation='sigmoid', name='layer01'))
 model.add(Layer(32, 16, activation='sigmoid', name='layer02'))
 model.add(Layer(16, 8, activation='sigmoid', name='layer03'))
-model.add(Layer(8, 1, activation='sigmoid', name='output_layer'))
+model.add(Layer(8, 1, name='output_layer'))
 model.compile(optimizer='rmsprop', loss='mean_squared_error')
 model.fit(data_x, data_y, epochs=1)
