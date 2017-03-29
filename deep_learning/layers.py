@@ -6,16 +6,18 @@ from deep_learning.utils import _get_function
 
 class BaseLayer(object):
     def __init__(self,
+                 n_in: int,
                  n_out: int,
                  name: str = None,
                  batch_input_shape: tuple = None):
+        self.n_in: int = n_in
         self.n_out: int = n_out
         self.name = name
         self.batch_input_shape: tuple = batch_input_shape
 
         self._is_output_layer = False
 
-    def compile(self, prev_layer):
+    def compile(self):
         raise NotImplementedError('compile method should be implemented')
 
     def is_input_layer(self):
@@ -31,59 +33,31 @@ class BaseLayer(object):
         return f'<Layer {self.name}>'
 
 
-class InputLayer(BaseLayer):
-    def __init__(self,
-                 name: str = None,
-                 batch_input_shape: tuple = None):
-        super(InputLayer, self).__init__(batch_input_shape[-1],
-                                         batch_input_shape=batch_input_shape,
-                                         name=name)
-
-    def compile(self, prev_layer):
-        pass
-
-    def is_input_layer(self):
-        return True
-
-    def feedforward(self, tensor: np.array):
-        return tensor
-
-
 class Layer(BaseLayer):
-    def __init__(self, n_out: int,
+    def __init__(self,
+                 n_in: int,
+                 n_out: int,
                  activation: str = None, dactivation=None,
                  batch_input_shape: tuple = None,
                  name: str = None):
-        super(Layer, self).__init__(n_out,
+        super(Layer, self).__init__(n_in, n_out,
                                     name=name,
                                     batch_input_shape=batch_input_shape)
 
         self.activation = _get_function(activations, activation, activation)
-        self.dactivation = _get_function(activations, f'd{activation}', dactivation)
+        self.dactivation = _get_function(activations, f'd{activation}', lambda x: x)
+
         self.w: np.array = None
         self.b: np.array = None
 
         # Shape
         self._shape = None
 
-    def compile(self, prev_layer):
-        self._create_weight(prev_layer)
+    def compile(self):
+        self.w = np.random.randn(self.n_in, self.n_out)
+        self.b = np.zeros(self.n_out)
 
-    def _create_weight(self, prev_layer) -> None:
-        w_shape, b_shape = self._get_shape(prev_layer)
-        self.w = np.random.randn(*w_shape)
-        self.b = np.zeros(b_shape)
-
-    def _get_shape(self, prev_layer) -> (tuple, int):
-        # Input Layer
-        if not prev_layer:
-            input_shape = list(self.batch_input_shape)
-            input_shape.remove(None)
-            input_shape.append(self.n_out)
-        else:
-            input_shape = [prev_layer.n_out, self.n_out]
-
-        return tuple(input_shape), self.n_out
+        # print(self.w.shape, self.b.shape)
 
     def get_shape(self):
         return self._shape
@@ -109,3 +83,8 @@ class Layer(BaseLayer):
         #     if self.dactivation:
         #         dactivation = self.dactivation(tensor)
         #     return dactivation.T * prev_tensor
+
+
+class InputLayer(Layer):
+    def is_input_layer(self):
+        return True

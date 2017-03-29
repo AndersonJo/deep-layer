@@ -23,10 +23,8 @@ class BaseModel(object):
         self.loss = _get_function(losses, loss, loss)
         self.dloss = _get_function(losses, f'd{loss}', loss)
 
-        prev_layer: Layer = None
         for layer in self.layers:
-            layer.compile(prev_layer)
-            prev_layer = layer
+            layer.compile()
 
         layer._is_output_layer = True
 
@@ -45,69 +43,63 @@ class BaseModel(object):
         return outputs
 
     def backpropagation(self, outputs: np.array, x: np.array, y: np.array, eta: float = 0.01):
-
-        # Prepare for Backpropagation
         outputs.insert(0, x)
-
+        N = len(self.layers)
+        deltas = []
         delta = None
-        for i in range(len(self.layers) - 1, 0, -1):
-            output: np.array = outputs[i + 1]
-            prev_output: np.array = outputs[i]
-            layer: Layer = self.layers[i]
-            prev_layer: Layer = self.layers[i - 1]
+        for i in range(N, 0, -1):
+            output: np.array = outputs[i]
+            prev_output: np.array = outputs[i - 1]
+            layer: Layer = self.layers[i - 1]
+            w, b = layer.get_weights()
 
-            if layer.is_output_layer():
+            # prev_layer: Layer = self.layers[i - 2]
+            if i == N:
                 # 2/N * (y_true - y_pred)
-                loss = self.dloss(y, output)  # (35, 1)
-
-                if layer.dactivation:
-                    # TODO
-                    pass
-                else:
-                    delta = loss * prev_output
+                d1 = self.dloss(y, output)  # (35, 1)
             else:
-                w, b = layer.get_weights()
-                print(w.shape, b.shape)
+                layer2: Layer = self.layers[i]
+                w2, b2 = layer2.get_weights()
+                d1 = delta.dot(w2.T)
 
-                # print(delta.shape)
+            d2 = layer.dactivation(output)
+            # d3 = d2.T.dot(prev_output)
+            delta = d1 * d2
 
-                # for i, (prev_output, layer) in enumerate(zip(outputs, self.layers[::-1])):
-                #     if i == 0:
-                #         # 2/N * (y_true - y_pred)
-                #         l1 = self.dloss(y, output)
-                #         if layer.dactivation:
-                #             # TODO
-                #             delta *= prev_output.T.dot(layer.dactivation(output))
-                #         else:
-                #             delta = l1 * prev_output
-                #
-                #     else:
-                #         w, b = layer.get_weights()
-                #         # delta^{(l+1)} dot weight^{(l)}
-                #         delta = delta.dot(w.T)
-                #         if layer.dactivation:
-                #             # print(delta.T.shape, prev_tensor.shape)
-                #             # print(layer.dactivation(tensor).shape)
-                #             # print(layer.dactivation(tensor) * prev_tensor)
-                #             print(layer.dactivation(output).shape, delta.shape)
-                #             # delta * prev_output.T.dot(layer.dactivation(output))
-                #             break
-                #
-                #             # delta.dot(w) * layer.dactivation(tensor) * prev_tensor
-                #             # delta = delta.T * layer.dactivation(tensor)
-                #
-                #     print('delta:', delta.shape)
-                #     output = prev_output
-                #     print(i)
+            # delta = np.sum(delta, axis=0, keepdims=True)
+            # output = np.sum(output, axis=0, keepdims=True)
 
-    def shuffle(self, x: np.array, y: np.array):
+            delta_w = output.dot(delta)  # delta.T.dot(output)
+            delta_b = delta.reshape(-1)
+
+            # print(w.shape, b.shape, delta.shape)
+            # w += - eta * delta.T.dot(output)
+            # b += - eta * delta
+            # print(b.shape, delta.shape, prev_layer.b.shape, layer, output.shape)
+            deltas.append((delta_w, delta_b))
+
+        layers = self.layers[::-1]
+        for i in range(len(deltas) - 1, -1, -1):
+            delta_w, delta_b = deltas[i]
+            layer = layers[i]
+
+            update_w = - eta * delta_w
+            update_b = - eta * delta_b
+
+            # layer.w += update_w
+
+            print(delta_w.shape, delta_b.shape, layer, layer.w.shape, layer.b.shape, update_w.shape, update_b.shape)
+
+    @staticmethod
+    def shuffle(x: np.array, y: np.array):
         N = len(x)
         rands = np.random.permutation(N)
         x = x[rands]
         y = y[rands]
         return x, y
 
-    def get_batch_samples(self, x, y, batch_size, step=None):
+    @staticmethod
+    def get_batch_samples(x, y, batch_size, step=None):
         if not step:
             step = np.random.randint(len(x) - batch_size)
 
@@ -142,7 +134,11 @@ class Model(BaseModel):
                 x_train, y_train = self.shuffle(x_train, y_train)
 
             for step in range(0, N):
-                sample_x, sample_y = self.get_batch_samples(x_train, y_train, batch_size, step)
+                # sample_x, sample_y = self.get_batch_samples(x_train, y_train, batch_size, step)
+                # sample_x = np.atleast_2d(x_train[step])
+                # sample_y = np.atleast_2d(y_train[step])
+                sample_x = x_train[step]
+                sample_y = y_train[step]
 
                 # Feedforward
                 tensors = self.feedforward(sample_x)

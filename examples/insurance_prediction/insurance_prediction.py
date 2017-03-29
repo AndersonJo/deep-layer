@@ -39,11 +39,10 @@ train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size=0.
 
 # Create Model
 model = Model()
-model.add(InputLayer(batch_input_shape=(None, 9), name='input_layer'))
-model.add(Layer(32, activation='sigmoid', name='layer01'))
-model.add(Layer(32, activation='sigmoid', name='layer02'))
-model.add(Layer(32, activation='sigmoid', name='layer03'))
-model.add(Layer(16, activation='sigmoid', name='layer04'))
-model.add(Layer(1, name='output_layer'))
+model.add(InputLayer(9, 64, activation='sigmoid', batch_input_shape=(None, 9), name='input_layer'))
+model.add(Layer(64, 32, activation='sigmoid', name='layer01'))
+model.add(Layer(32, 16, activation='sigmoid', name='layer02'))
+model.add(Layer(16, 8, activation='sigmoid', name='layer03'))
+model.add(Layer(8, 1, activation='sigmoid', name='output_layer'))
 model.compile(optimizer='rmsprop', loss='mean_squared_error')
 model.fit(data_x, data_y, epochs=1)
