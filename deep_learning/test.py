@@ -1,54 +1,53 @@
 import numpy as np
 
+X = np.matrix([[0, 0], [0, 1], [1, 0], [1, 1]])  # 4x2 (4=num training examples)
+y = np.matrix([[0, 1, 1, 0]]).T  # 4x1
+numIn, numHid, numOut = 2, 3, 1;  # setup layers
+# initialize weights
+theta1 = (0.5 * np.sqrt(6 / (numIn + numHid)) * np.random.randn(numIn + 1, numHid))
+theta2 = (0.5 * np.sqrt(6 / (numHid + numOut)) * np.random.randn(numHid + 1, numOut))
+# initialize weight gradient matrices
+theta1_grad = np.matrix(np.zeros((numIn + 1, numHid)))  # 3x2
+theta2_grad = np.matrix(np.zeros((numHid + 1, numOut)))  # 3x1
+alpha = 0.1  # learning rate
+epochs = 1  # num iterations
+m = X.shape[0];  # num training examples
 
-def nonlin(x, deriv=False):
-    if (deriv == True):
-        return x * (1 - x)
+print(theta1.shape, theta2.shape)
 
-    return 1 / (1 + np.exp(-x))
+def sigmoid(x):
+    return np.matrix(1.0 / (1.0 + np.exp(-x)))
 
 
-X = np.array([[0, 0, 1],
-              [0, 1, 1],
-              [1, 0, 1],
-              [1, 1, 1]])
+# backpropagation/gradient descent
+for j in range(epochs):
+    for x in range(m):  # for each training example
+        # forward propagation
+        a1 = np.matrix(np.concatenate((X[x, :], np.ones((1, 1))), axis=1)) # 1,3
+        z2 = np.matrix(a1.dot(theta1))  # 1x3 * 3x3 = 1x3
+        a2 = np.matrix(np.concatenate((sigmoid(z2), np.ones((1, 1))), axis=1)) # 1,4
+        z3 = np.matrix(a2.dot(theta2))
+        a3 = np.matrix(sigmoid(z3))  # final output # 1,1
 
-y = np.array([[0],
-              [1],
-              [1],
-              [0]])
+        # backpropagation
+        delta3 = np.matrix(a3 - y[x])  # 1x1
+        # print(theta2.dot(delta3).shape)  # 4,1
+        # print(np.multiply(a2, (1 - a2)).T.shape) # (4,1)
+        delta2 = np.matrix(np.multiply(theta2.dot(delta3), np.multiply(a2, (1 - a2)).T))  # 1x4
+        # print(delta2.shape) # (4,1)
 
-np.random.seed(1)
+        # Calculate the gradients for each training example and sum them together, getting an average
+        # gradient over all the training pairs. Then at the end, we modify our weights.
+        theta1_grad += np.matrix((delta2[0:numHid, :].dot(a1))).T  # Notice I omit the bias delta
+        # print(theta1_grad.shape) # (3, 3)
+        theta2_grad += np.matrix((delta3.dot(a2))).T  # 1x1 * 1x4 = 1x4
+        # print(theta2_grad.shape) # (4, 1)
 
-# randomly initialize our weights with mean 0
-syn0 = 2 * np.random.random((3, 4)) - 1
-syn1 = 2 * np.random.random((4, 1)) - 1
-
-for j in range(1):
-
-    # Feed forward through layers 0, 1, and 2
-    l0 = X
-    l1 = nonlin(np.dot(l0, syn0))
-    l2 = nonlin(np.dot(l1, syn1))
-
-    # how much did we miss the target value?
-    l2_error = y - l2
-
-    if (j % 10000) == 0:
-        print
-        "Error:" + str(np.mean(np.abs(l2_error)))
-
-    # in what direction is the target value?
-    # were we really sure? if so, don't change too much.
-    print(l2_error.shape, nonlin(l2, deriv=True).shape)
-    l2_delta = l2_error * nonlin(l2, deriv=True)
-
-    # how much did each l1 value contribute to the l2 error (according to the weights)?
-    l1_error = l2_delta.dot(syn1.T)
-
-    # in what direction is the target l1?
-    # were we really sure? if so, don't change too much.
-    l1_delta = l1_error * nonlin(l1, deriv=True)
-
-    syn1 += l1.T.dot(l2_delta)
-    syn0 += l0.T.dot(l1_delta)
+    # update the weights after going through all training examples
+    print(theta1.shape, theta1_grad.shape)
+    theta1 += -1 * (1 / m) * np.multiply(alpha, theta1_grad)
+    print(theta2.shape, theta2_grad.shape)
+    theta2 += -1 * (1 / m) * np.multiply(alpha, theta2_grad)
+    # reset gradients
+    theta1_grad = np.matrix(np.zeros((numIn + 1, numHid)))
+    theta2_grad = np.matrix(np.zeros((numHid + 1, numOut)))

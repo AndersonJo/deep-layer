@@ -60,16 +60,16 @@ class BaseModel(object):
             else:
                 layer2: Layer = self.layers[i]
                 w2, b2 = layer2.get_weights()
-                d1 = delta.dot(w2.T)
+                d1 = w2.dot(delta)
 
-            d2 = layer.dactivation(output)
+            d2 = layer.dactivation(output).T
             # d3 = d2.T.dot(prev_output)
             delta = d1 * d2
 
             # delta = np.sum(delta, axis=0, keepdims=True)
             # output = np.sum(output, axis=0, keepdims=True)
 
-            delta_w = output.dot(delta)  # delta.T.dot(output)
+            delta_w = delta.dot(prev_output).T
             delta_b = delta.reshape(-1)
 
             # print(w.shape, b.shape, delta.shape)
@@ -86,9 +86,10 @@ class BaseModel(object):
             update_w = - eta * delta_w
             update_b = - eta * delta_b
 
-            # layer.w += update_w
+            layer.w += update_w
+            layer.b += update_b
 
-            print(delta_w.shape, delta_b.shape, layer, layer.w.shape, layer.b.shape, update_w.shape, update_b.shape)
+            # print(delta_w.shape, delta_b.shape, layer, layer.w.shape, layer.b.shape, update_w.shape, update_b.shape)
 
     @staticmethod
     def shuffle(x: np.array, y: np.array):
@@ -135,10 +136,10 @@ class Model(BaseModel):
 
             for step in range(0, N):
                 # sample_x, sample_y = self.get_batch_samples(x_train, y_train, batch_size, step)
-                # sample_x = np.atleast_2d(x_train[step])
-                # sample_y = np.atleast_2d(y_train[step])
-                sample_x = x_train[step]
-                sample_y = y_train[step]
+                sample_x = np.atleast_2d(x_train[step])
+                sample_y = np.atleast_2d(y_train[step])
+                # sample_x = x_train[step]
+                # sample_y = y_train[step]
 
                 # Feedforward
                 tensors = self.feedforward(sample_x)
