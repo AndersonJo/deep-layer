@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from deep_learning.layers import Layer
+from deep_learning.layers import Layer, InputLayer
 from deep_learning.models import Model
 
 raw_data = pd.read_csv('insurance.csv')
@@ -27,7 +27,7 @@ data_y = raw_data.as_matrix(['expenses'])
 data_x = raw_data.drop(['expenses', 'region'], axis=1)
 data_x = data_x.as_matrix()
 
-# Split data into train and test subset
+# Split data into train and examples subset
 train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size=0.3)
 
 # print('[TRAIN]')
@@ -39,10 +39,11 @@ train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, test_size=0.
 
 # Create Model
 model = Model()
-model.add(Layer(32, activation='sigmoid', batch_input_shape=(None, 9), name='layer01'))
+model.add(InputLayer(batch_input_shape=(None, 9), name='input_layer'))
+model.add(Layer(32, activation='sigmoid', name='layer01'))
 model.add(Layer(32, activation='sigmoid', name='layer02'))
 model.add(Layer(32, activation='sigmoid', name='layer03'))
 model.add(Layer(16, activation='sigmoid', name='layer04'))
-model.add(Layer(1, name='layer05'))
+model.add(Layer(1, name='output_layer'))
 model.compile(optimizer='rmsprop', loss='mean_squared_error')
-model.fit(data_x, data_y)
+model.fit(data_x, data_y, epochs=1)

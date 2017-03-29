@@ -1,18 +1,65 @@
 import numpy as np
 
 from deep_learning.activations import activations
+from deep_learning.utils import _get_function
 
 
-class Layer(object):
-    def __init__(self, n_out: int, activation: str = None, batch_input_shape: tuple = None,
-                 name: str = None):
-        self.name = name
+class BaseLayer(object):
+    def __init__(self,
+                 n_out: int,
+                 name: str = None,
+                 batch_input_shape: tuple = None):
         self.n_out: int = n_out
-        self.activation = activations[activation] if activation else None
-        self.dactivation = activations[f'd{activation}'] if activation else None
+        self.name = name
         self.batch_input_shape: tuple = batch_input_shape
-        self.is_input_layer = False
 
+        self._is_output_layer = False
+
+    def compile(self, prev_layer):
+        raise NotImplementedError('compile method should be implemented')
+
+    def is_input_layer(self):
+        raise NotImplementedError('is_input_layer method should be implemented')
+
+    def is_output_layer(self):
+        return self._is_output_layer
+
+    def feedforward(self, tensor: np.array):
+        raise NotImplementedError('feedforward method should be implemented')
+
+    def __str__(self):
+        return f'<Layer {self.name}>'
+
+
+class InputLayer(BaseLayer):
+    def __init__(self,
+                 name: str = None,
+                 batch_input_shape: tuple = None):
+        super(InputLayer, self).__init__(batch_input_shape[-1],
+                                         batch_input_shape=batch_input_shape,
+                                         name=name)
+
+    def compile(self, prev_layer):
+        pass
+
+    def is_input_layer(self):
+        return True
+
+    def feedforward(self, tensor: np.array):
+        return tensor
+
+
+class Layer(BaseLayer):
+    def __init__(self, n_out: int,
+                 activation: str = None, dactivation=None,
+                 batch_input_shape: tuple = None,
+                 name: str = None):
+        super(Layer, self).__init__(n_out,
+                                    name=name,
+                                    batch_input_shape=batch_input_shape)
+
+        self.activation = _get_function(activations, activation, activation)
+        self.dactivation = _get_function(activations, f'd{activation}', dactivation)
         self.w: np.array = None
         self.b: np.array = None
 
@@ -41,6 +88,12 @@ class Layer(object):
     def get_shape(self):
         return self._shape
 
+    def get_weights(self):
+        return self.w, self.b
+
+    def is_input_layer(self):
+        return False
+
     def predict(self, tensor):
         h = tensor.dot(self.w) + self.b
         if self.activation:
@@ -51,8 +104,8 @@ class Layer(object):
         y_pred = self.predict(tensor)
         return y_pred
 
-    def backpropagation(self, prev_tensor, tensor):
-        pass
-
-    def __str__(self):
-        return f'<Layer {self.name}>'
+        # def backpropagation(self, prev_tensor, tensor):
+        #     dactivation = np.array([1])
+        #     if self.dactivation:
+        #         dactivation = self.dactivation(tensor)
+        #     return dactivation.T * prev_tensor
