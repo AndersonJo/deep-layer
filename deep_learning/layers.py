@@ -45,10 +45,13 @@ class Layer(BaseLayer):
                                     batch_input_shape=batch_input_shape)
 
         self.activation = _get_function(activations, activation, activation)
-        self.dactivation = _get_function(activations, f'd{activation}', lambda x: x)
+        self.dactivation = _get_function(activations, f'd{activation}', lambda x: np.array(1))
 
         self.w: np.array = None
         self.b: np.array = None
+
+        self.update_w = 0
+        self.update_b = 0
 
         # Shape
         self._shape = None
@@ -56,8 +59,6 @@ class Layer(BaseLayer):
     def compile(self):
         self.w = np.random.randn(self.n_in, self.n_out)
         self.b = np.zeros(self.n_out)
-
-        # print(self.w.shape, self.b.shape)
 
     def get_shape(self):
         return self._shape
@@ -77,12 +78,6 @@ class Layer(BaseLayer):
     def feedforward(self, tensor: np.array):
         y_pred = self.predict(tensor)
         return y_pred
-
-        # def backpropagation(self, prev_tensor, tensor):
-        #     dactivation = np.array([1])
-        #     if self.dactivation:
-        #         dactivation = self.dactivation(tensor)
-        #     return dactivation.T * prev_tensor
 
 
 class InputLayer(Layer):

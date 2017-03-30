@@ -14,5 +14,5 @@ def dsigmoid(phi: np.array):
 
 activations = dict(
     sigmoid=sigmoid,
-    dsigmoid=sigmoid
+    dsigmoid=dsigmoid
 )
