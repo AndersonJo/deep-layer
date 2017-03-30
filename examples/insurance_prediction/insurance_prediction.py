@@ -59,5 +59,5 @@ plt.scatter(x, y_true, color='#333333', label='y_true')
 plt.scatter(x, y_pred, color='red', label='y_pred')
 plt.grid()
 plt.legend()
-plt.savefig('xx.png')
+plt.savefig('result.png')
 

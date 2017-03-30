@@ -64,35 +64,17 @@ class BaseModel(object):
             if i == N:
                 d1 = self.dloss(y, output)
                 loss = np.sum(d1)
-
-                # print(f'y: {y}, output: {output}, loss: {loss}')
-
-                # print('loss:', d1, d1.shape, y.shape, output.shape)
             else:
                 layer2: Layer = self.layers[i]
                 w2, b2 = layer2.get_weights()
                 d1 = w2.dot(delta)
 
-                if np.isnan(np.sum(w2)) or np.isinf(np.sum(w2)):
-                    print(w2)
-                    raise Exception
-
-            # print('output', np.sum(output), np.max(w), np.min(w))
-            if np.isnan(np.sum(d1)) or np.isinf(np.sum(d1)):
-                raise Exception
-
             d2 = layer.dactivation(output).T
             delta = d1 * d2
-
-            # print('output', np.sum(output), np.max(w), np.min(w))
-            if np.isnan(np.sum(delta)) or np.isinf(np.sum(delta)):
-                raise Exception
 
             delta_w = delta.dot(prev_output).T
             delta_b = delta.reshape([-1])
             deltas.append((delta_w, delta_b))
-
-            # print(np.sum(delta_w), np.sum(delta_b))
 
         layers = self.layers[::-1]
         for i in range(len(deltas) - 1, -1, -1):
@@ -104,10 +86,6 @@ class BaseModel(object):
 
             layer.w += layer.update_w
             layer.b += layer.update_b
-
-            # print('output', np.sum(output), np.max(w), np.min(w))
-            if np.isnan(np.sum(layer.w)) or np.isinf(np.sum(layer.w)):
-                raise Exception
 
         return dict(loss=loss)
 
@@ -160,13 +138,6 @@ class Model(BaseModel):
 
                 # Feedforward
                 tensors = self.feedforward(sample_x)
-
-                w, b = self.layers[0].get_weights()
-                if np.isnan(np.sum(w)) or np.isinf(np.sum(w)):
-                    raise Exception
-
-                if np.isnan(np.sum(b)) or np.isinf(np.sum(b)):
-                    raise Exception
 
                 # Backpropagation
                 result = self.backpropagation(tensors, sample_x, sample_y, n_data=N, eta=learning_rate)
