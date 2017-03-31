@@ -2,7 +2,7 @@ import numpy as np
 
 from deep_learning.exceptions import LayerNotFound
 from deep_learning.layers import Layer, BaseLayer
-from deep_learning.loses import losses, dmean_squared_error
+from deep_learning.costs import losses, dmean_squared_error
 from deep_learning.utils import _get_function
 
 
