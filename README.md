@@ -1,9 +1,9 @@
 # Deep Layer
-Deep Learning with Numpy
+Deep Learning with Numpy<br>
 You can learn how feed-forward and backpropagation works. 
 
 # Example 
-The example below predicts insurance cost.
+The example below predicts insurance cost.<br>
 The full code is [here](https://github.com/AndersonJo/deep-layer/blob/master/examples/insurance_prediction/insurance_prediction.py)
 
 ```
