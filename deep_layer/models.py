@@ -1,9 +1,9 @@
 import numpy as np
 
-from deep_learning.exceptions import LayerNotFound
-from deep_learning.layers import Layer, BaseLayer
-from deep_learning.costs import losses, dmean_squared_error
-from deep_learning.utils import _get_function
+from deep_layer.exceptions import LayerNotFound
+from deep_layer.layers import Layer, BaseLayer
+from deep_layer.costs import losses
+from deep_layer.utils import _get_function
 
 
 class BaseModel(object):
@@ -12,27 +12,41 @@ class BaseModel(object):
         self.x_train: np.array = None
         self.y_train: np.array = None
 
+        self.batch_size = None
         self.optimizer = None
         self.loss = None
         self.dloss = None
 
-    def compile(self, optimizer: str, loss: str):
+        self.last_n_in = 0
+        self.last_n_out = 0
+
+    def compile(self, optimizer, loss: str, batch=32):
         if not self.layers:
             raise LayerNotFound('Layer is not found. you must add at least one layer to the model')
 
+        self.batch_size = batch
+        self.optimizer = optimizer
         self.loss = _get_function(losses, loss, loss)
         self.dloss = _get_function(losses, f'd{loss}', loss)
 
         for layer in self.layers:
-            layer.compile()
+            layer.compile(batch=batch)
 
-        layer._is_output_layer = True
+        last_layer = self.layers[-1]
+        self.last_n_in: int = last_layer.n_in
+        self.last_n_out: int = last_layer.n_out
 
     def predict(self, x):
-        tensor = x
-        for layer in self.layers:
-            tensor = layer.feedforward(tensor)
-        return tensor
+        x = x.reshape(-1, self.batch_size, x.shape[-1])
+        n = len(x)
+        response = np.zeros((n, self.batch_size, self.last_n_out))
+        for i in range(n):
+            tensor = x[i]
+            for layer in self.layers:
+                tensor = layer.feedforward(tensor)
+
+            response[i] = tensor
+        return response.reshape(-1, self.last_n_out)
 
     def feedforward(self, x: np.array):
         outputs = []
@@ -47,15 +61,13 @@ class BaseModel(object):
                         outputs: np.array,
                         x: np.array,
                         y: np.array,
-                        n_data: int = 2,
-                        eta: float = 0.01):
+                        n_data: int = 2):
         outputs.insert(0, x)
-
         N = len(self.layers)
         deltas = []
         delta = None
-
         loss = np.nan
+
         for i in range(N, 0, -1):
             output: np.array = outputs[i]
             prev_output: np.array = outputs[i - 1]
@@ -67,13 +79,11 @@ class BaseModel(object):
             else:
                 layer2: Layer = self.layers[i]
                 w2, b2 = layer2.get_weights()
-                d1 = w2.dot(delta)
+                d1 = delta.dot(w2.T)
 
-            d2 = layer.dactivation(output).T
-            delta = d1 * d2
-
-            delta_w = delta.dot(prev_output).T
-            delta_b = delta.reshape([-1])
+            delta = d1 * layer.dactivation(output)
+            delta_w = prev_output.T.dot(delta)
+            delta_b = delta
             deltas.append((delta_w, delta_b))
 
         layers = self.layers[::-1]
@@ -81,11 +91,9 @@ class BaseModel(object):
             delta_w, delta_b = deltas[i]
             layer = layers[i]
 
-            layer.update_w = 0.5 * layer.update_w + - 2 / n_data * eta * delta_w
-            layer.update_b = 0.5 * layer.update_b + - 2 / n_data * eta * delta_b
-
-            layer.w += layer.update_w
-            layer.b += layer.update_b
+            layer.zero_grad()
+            layer = self.optimizer(layer, delta_w, delta_b, n_data)
+            layer.update()
 
         return dict(loss=loss)
 
@@ -114,15 +122,13 @@ class Model(BaseModel):
     def add(self, layer: BaseLayer):
         self.layers.append(layer)
 
-    def compile(self, optimizer=None, loss=None):
-        super(Model, self).compile(optimizer, loss)
+    def compile(self, optimizer=None, loss=None, batch=32):
+        super(Model, self).compile(optimizer, loss=loss, batch=batch)
 
     def fit(self,
             x_train: np.array,
             y_train: np.array,
-            learning_rate=0.01,
             shuffle: bool = True,
-            batch_size: int = 35,
             epochs=10):
         x_train: np.array = np.array(x_train)
         y_train: np.array = np.array(y_train)
@@ -134,13 +140,16 @@ class Model(BaseModel):
 
             losses = list()
             for step in range(0, N):
-                sample_x, sample_y = self.get_batch_samples(x_train, y_train, 1, step)
+                sample_x, sample_y = self.get_batch_samples(x_train, y_train, 2, step)
+
+                if self.batch_size != sample_x.shape[0]:
+                    break
 
                 # Feedforward
                 tensors = self.feedforward(sample_x)
 
                 # Backpropagation
-                result = self.backpropagation(tensors, sample_x, sample_y, n_data=N, eta=learning_rate)
+                result = self.backpropagation(tensors, sample_x, sample_y, n_data=N)
                 losses.append(result['loss'])
 
-            print('epoch:', epoch, 'loss:', np.sum(losses))
+            print('epoch:', epoch, 'loss:', np.mean(losses))
