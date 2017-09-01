@@ -1,14 +1,10 @@
+import numpy as np
 import pandas as pd
-from sklearn.metrics import r2_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 
 from deep_layer.layers import Layer, InputLayer
 from deep_layer.models import Model
-
-import numpy as np
-import matplotlib.pyplot as plt
-
 from deep_layer.optimizers import Momentum
 
 np.random.seed(0)
@@ -46,19 +42,18 @@ model.add(InputLayer(9, 32, activation='sigmoid', batch_input_shape=(2, 9), name
 model.add(Layer(32, 16, activation='sigmoid', name='hidden_layer1'))
 # model.add(Layer(16, 8, activation='sigmoid', name='hidden_layer2'))
 model.add(Layer(16, 1, name='output_layer'))
-model.compile(optimizer=Momentum(lr=0.0001), batch=2, loss='mean_squared_error')
-model.fit(data_x, data_y, epochs=10, shuffle=False)
+model.compile(optimizer=Momentum(lr=0.0005), batch=128, loss='mean_squared_error')
+model.fit(data_x, data_y, epochs=15, shuffle=False)
 
-y_pred = model.predict(test_x)
 
+#
+# y_pred = model.predict(test_x)
+#
 # print('r^2 score:', r2_score(test_y, y_pred))
 # y_pred = expense_scaler.inverse_transform(y_pred)
 # y_true = expense_scaler.inverse_transform(test_y)
 # N = len(y_pred)
 # x = list(range(N))
-#
-# print(y_pred[:10])
-# print(y_true[:10])
 #
 # plt.scatter(x, y_true, color='#333333', label='y_true')
 # plt.scatter(x, y_pred, color='red', label='y_pred')

@@ -3,6 +3,7 @@ import numpy as np
 from deep_layer.exceptions import LayerNotFound
 from deep_layer.layers import Layer, BaseLayer
 from deep_layer.costs import losses
+from deep_layer.sample import Sample
 from deep_layer.utils import _get_function
 
 
@@ -97,23 +98,6 @@ class BaseModel(object):
 
         return dict(loss=loss)
 
-    @staticmethod
-    def shuffle(x: np.array, y: np.array):
-        N = len(x)
-        rands = np.random.permutation(N)
-        x = x[rands]
-        y = y[rands]
-        return x, y
-
-    @staticmethod
-    def get_batch_samples(x, y, batch_size, step=None):
-        if not step:
-            step = np.random.randint(len(x) - batch_size)
-
-        sample_x = x[step: step + batch_size]
-        sample_y = y[step: step + batch_size]
-        return sample_x, sample_y
-
 
 class Model(BaseModel):
     def __init__(self):
@@ -130,20 +114,20 @@ class Model(BaseModel):
             y_train: np.array,
             shuffle: bool = True,
             epochs=10):
+
+        sample = Sample(x_train, y_train, batch=self.batch_size)
+
         x_train: np.array = np.array(x_train)
         y_train: np.array = np.array(y_train)
         N = len(x_train)
 
         for epoch in range(epochs):
-            if shuffle:
-                x_train, y_train = self.shuffle(x_train, y_train)
+            sample.shuffle()
 
             losses = list()
-            for step in range(0, N):
-                sample_x, sample_y = self.get_batch_samples(x_train, y_train, 2, step)
-
+            for sample_x, sample_y in sample.samples(n=30000):
                 if self.batch_size != sample_x.shape[0]:
-                    break
+                    continue
 
                 # Feedforward
                 tensors = self.feedforward(sample_x)
@@ -152,4 +136,4 @@ class Model(BaseModel):
                 result = self.backpropagation(tensors, sample_x, sample_y, n_data=N)
                 losses.append(result['loss'])
 
-            print('epoch:', epoch, 'loss:', np.mean(losses))
+            print(f'[Epoch {epoch}] loss: {np.mean(losses)}')

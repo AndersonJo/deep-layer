@@ -60,8 +60,8 @@ class Layer(BaseLayer):
         self.update_b = 0
 
     def update(self):
-        self.w = self.update_w
-        self.b = self.update_b
+        self.w += self.update_w
+        self.b += self.update_b
 
     def get_shape(self):
         return self._shape
