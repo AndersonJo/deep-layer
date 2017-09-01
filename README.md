@@ -3,12 +3,17 @@ Deep Learning with Numpy
 You can learn how feed-forward and backpropagation works. 
 
 # Example 
+The example below predicts insurance cost.
+The full code is [here](https://github.com/AndersonJo/deep-layer/blob/master/examples/insurance_prediction/insurance_prediction.py)
 
 ```
+>> import numpy as np
 >> from deep_layer.layers import Layer, InputLayer
 >> from deep_layer.models import Model
 >> from deep_layer.optimizers import Momentum
->> 
+>>
+>> np.random.seed(0)
+>>
 >> model = Model()
 >> model.add(InputLayer(9, 32, activation='sigmoid', batch_input_shape=(2, 9), name='input_layer'))
 >> model.add(Layer(32, 16, activation='sigmoid', name='hidden_layer1'))
