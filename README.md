@@ -7,6 +7,7 @@ You can learn how feed-forward and backpropagation works.
 ```
 >> from deep_layer.layers import Layer, InputLayer
 >> from deep_layer.models import Model
+>> from deep_layer.optimizers import Momentum
 >> 
 >> model = Model()
 >> model.add(InputLayer(9, 32, activation='sigmoid', batch_input_shape=(2, 9), name='input_layer'))
