@@ -38,16 +38,19 @@ class BaseModel(object):
         self.last_n_out: int = last_layer.n_out
 
     def predict(self, x):
-        x = x.reshape(-1, self.batch_size, x.shape[-1])
         n = len(x)
-        response = np.zeros((n, self.batch_size, self.last_n_out))
-        for i in range(n):
-            tensor = x[i]
+        sample = Sample(x, batch=self.batch_size)
+
+        response = list()
+        for tensor in sample.samples(train=False, shuffle=False):
             for layer in self.layers:
                 tensor = layer.feedforward(tensor)
+            response.append(tensor)
 
-            response[i] = tensor
-        return response.reshape(-1, self.last_n_out)
+        response = np.array(response)
+        response = response.reshape(-1, self.last_n_out)[:n]
+        print('response:', response.shape)
+        return response
 
     def feedforward(self, x: np.array):
         outputs = []
@@ -106,9 +109,6 @@ class Model(BaseModel):
     def add(self, layer: BaseLayer):
         self.layers.append(layer)
 
-    def compile(self, optimizer=None, loss=None, batch=32):
-        super(Model, self).compile(optimizer, loss=loss, batch=batch)
-
     def fit(self,
             x_train: np.array,
             y_train: np.array,
@@ -116,19 +116,13 @@ class Model(BaseModel):
             epochs=10):
 
         sample = Sample(x_train, y_train, batch=self.batch_size)
-
-        x_train: np.array = np.array(x_train)
-        y_train: np.array = np.array(y_train)
         N = len(x_train)
 
         for epoch in range(epochs):
             sample.shuffle()
 
             losses = list()
-            for sample_x, sample_y in sample.samples(n=30000):
-                if self.batch_size != sample_x.shape[0]:
-                    continue
-
+            for i, (sample_x, sample_y) in enumerate(sample.samples(n=30000, shuffle=True)):
                 # Feedforward
                 tensors = self.feedforward(sample_x)
 
