@@ -45,7 +45,7 @@ model.add(Layer(32, 16, activation='sigmoid', name='hidden_layer1'))
 # model.add(Layer(16, 8, activation='sigmoid', name='hidden_layer2'))
 model.add(Layer(16, 1, activation='sigmoid', name='output_layer'))
 model.compile(optimizer=Momentum(lr=0.001), batch=64, loss='mean_squared_error')
-model.fit(data_x, data_y, epochs=200, shuffle=False)
+model.fit(data_x, data_y, epochs=98, shuffle=False)
 
 y_pred = model.predict(test_x)
 
