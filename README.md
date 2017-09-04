@@ -1,6 +1,11 @@
 # Deep Layer
-Deep Learning with Numpy<br>
-You can learn how feed-forward and backpropagation works. 
+Deep Learning Library with Numpy<br>
+The library support the following features
+
+1. Deep Neural Network
+2. Mini-batch 
+3. provide optimizations and loss functions
+
 
 # Example 
 The example below predicts insurance cost.<br>
